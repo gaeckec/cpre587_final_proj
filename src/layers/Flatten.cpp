@@ -46,7 +46,7 @@ namespace ML {
 
 
     // Compute the convolution using threads
-    void FlattenLayer::computeThreaded(const LayerData &dataIn) const {
+    void FlattenLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 
@@ -54,7 +54,7 @@ namespace ML {
 
 
     // Compute the convolution using a tiled approach
-    void FlattenLayer::computeTiled(const LayerData &dataIn) const {
+    void FlattenLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 
@@ -62,7 +62,7 @@ namespace ML {
 
 
     // Compute the convolution using SIMD
-    void FlattenLayer::computeSIMD(const LayerData &dataIn) const {
+    void FlattenLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 

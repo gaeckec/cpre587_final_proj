@@ -45,7 +45,7 @@ namespace ML {
 
 
     // Compute the convolution using threads
-    void MaxPoolingLayer::computeThreaded(const LayerData &dataIn) const {
+    void MaxPoolingLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 
@@ -53,7 +53,7 @@ namespace ML {
 
 
     // Compute the convolution using a tiled approach
-    void MaxPoolingLayer::computeTiled(const LayerData &dataIn) const {
+    void MaxPoolingLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 
@@ -61,7 +61,7 @@ namespace ML {
 
 
     // Compute the convolution using SIMD
-    void MaxPoolingLayer::computeSIMD(const LayerData &dataIn) const {
+    void MaxPoolingLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 

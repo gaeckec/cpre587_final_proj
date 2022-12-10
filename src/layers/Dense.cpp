@@ -144,7 +144,7 @@ namespace ML {
     }
 
     // Compute the Dense using threads
-    void DenseLayer::computeThreaded(const LayerData &dataIn) const {
+    void DenseLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
         std::cout << "\n\n\nhello Dense thread\n\n\n";
@@ -152,7 +152,7 @@ namespace ML {
     }
 
     // Compute the Dense using a tiled approach
-    void DenseLayer::computeTiled(const LayerData &dataIn) const {
+    void DenseLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
         std::cout << "\n\n\nhello Dense Tiled\n\n\n";
@@ -161,7 +161,7 @@ namespace ML {
 
 
     // Compute the Dense using SIMD
-    void DenseLayer::computeSIMD(const LayerData &dataIn) const {
+    void DenseLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
         std::cout << "\n\n\nhello Dense SIMD\n\n\n";

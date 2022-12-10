@@ -57,9 +57,9 @@ namespace ML {
 
             // Virtual functions
             virtual void computeNaive(const LayerData &dataIn) const override;
-            virtual void computeThreaded(const LayerData &dataIn) const override;
-            virtual void computeTiled(const LayerData &dataIn) const override;
-            virtual void computeSIMD(const LayerData &dataIn) const override;
+            virtual void computeLinearQ(const LayerData &dataIn) const override;
+            virtual void computeLogQ(const LayerData &dataIn) const override;
+            virtual void computeHash(const LayerData &dataIn) const override;
 
         private:
             LayerParams weightParam;

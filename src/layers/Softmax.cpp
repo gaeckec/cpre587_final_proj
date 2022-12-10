@@ -46,7 +46,7 @@ namespace ML {
 
 
     // Compute the convolution using threads
-    void SoftMaxLayer::computeThreaded(const LayerData &dataIn) const {
+    void SoftMaxLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 
@@ -54,7 +54,7 @@ namespace ML {
 
 
     // Compute the convolution using a tiled approach
-    void SoftMaxLayer::computeTiled(const LayerData &dataIn) const {
+    void SoftMaxLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 
@@ -62,7 +62,7 @@ namespace ML {
 
 
     // Compute the convolution using SIMD
-    void SoftMaxLayer::computeSIMD(const LayerData &dataIn) const {
+    void SoftMaxLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
 

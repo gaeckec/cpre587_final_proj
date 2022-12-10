@@ -247,7 +247,7 @@ namespace ML {
 
 
     // Compute the convolution using threads
-    void ConvolutionalLayer::computeThreaded(const LayerData &dataIn) const {
+    void ConvolutionalLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
         std::cout << "\n\n\nhello Convolution thread\n\n\n";
@@ -256,7 +256,7 @@ namespace ML {
 
 
     // Compute the convolution using a tiled approach
-    void ConvolutionalLayer::computeTiled(const LayerData &dataIn) const {
+    void ConvolutionalLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
         std::cout << "\n\n\nhello Convolution Tiled\n\n\n";
@@ -265,7 +265,7 @@ namespace ML {
 
 
     // Compute the convolution using SIMD
-    void ConvolutionalLayer::computeSIMD(const LayerData &dataIn) const {
+    void ConvolutionalLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
         std::cout << "\n\n\nhello Convolution SIMD\n\n\n";
