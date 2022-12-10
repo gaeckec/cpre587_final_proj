@@ -48,7 +48,7 @@ namespace ML {
     // Compute the convolution using threads
     void FlattenLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
-
+        computeNaive(dataIn);
 
     }
 
@@ -57,7 +57,7 @@ namespace ML {
     void FlattenLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 
 
@@ -65,6 +65,6 @@ namespace ML {
     void FlattenLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 };

@@ -49,7 +49,7 @@ namespace ML {
     void SoftMaxLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 
 
@@ -57,7 +57,7 @@ namespace ML {
     void SoftMaxLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 
 
@@ -65,6 +65,6 @@ namespace ML {
     void SoftMaxLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 };

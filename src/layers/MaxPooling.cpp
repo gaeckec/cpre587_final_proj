@@ -48,7 +48,7 @@ namespace ML {
     void MaxPoolingLayer::computeLinearQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 
 
@@ -56,7 +56,7 @@ namespace ML {
     void MaxPoolingLayer::computeLogQ(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 
 
@@ -64,6 +64,6 @@ namespace ML {
     void MaxPoolingLayer::computeHash(const LayerData &dataIn) const {
         // TODO: Your Code Here...
 
-
+        computeNaive(dataIn);
     }
 };
