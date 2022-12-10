@@ -48,7 +48,7 @@ Model buildToyModel(const fs::path modelPath) {
 
     ConvolutionalLayer* conv1 = new ConvolutionalLayer(conv1_inDataParam, conv1_outDataParam, conv1_weightParam, conv1_biasParam, 0.302879363, 1.72394050, quantize, 8);
     model.addLayer(conv1);
-
+/*
     // --- Conv 2: L1 ---
     // Input shape: 60x60x32
     // Output shape: 56x56x32
@@ -170,7 +170,7 @@ Model buildToyModel(const fs::path modelPath) {
 
     SoftMaxLayer* sm0 = new SoftMaxLayer(sm0_inDataParam, sm0_outDataParam);
     model.addLayer(sm0);
-
+*/
     return model;
 }
 
@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
         layer_idx = 0;
         // layer_times = {0};
         // Run infrence on the model
-        const LayerData output = model.infrence(img, Layer::InfType::NAIVE);
+        const LayerData output = model.infrence(img, Layer::InfType::LOGQ);
 
         //Finishing timing of system
         // auto end = std::chrono::high_resolution_clock::now();

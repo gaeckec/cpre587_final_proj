@@ -29,14 +29,14 @@ namespace ML {
             case Layer::InfType::NAIVE:
                 layer.computeNaive(inData);
                 break;
-            case Layer::InfType::THREADED:
-                layer.computeThreaded(inData);
+            case Layer::InfType::LINQ:
+                layer.computeLinearQ(inData);
                 break;
-            case Layer::InfType::TILED:
-                layer.computeTiled(inData);
+            case Layer::InfType::LOGQ:
+                layer.computeLogQ(inData);
                 break;
-            case Layer::InfType::SIMD:
-                layer.computeSIMD(inData);
+            case Layer::InfType::HASH:
+                layer.computeHash(inData);
                 break;
             default:
                 assert(false && "Infrence Type not implemented");
