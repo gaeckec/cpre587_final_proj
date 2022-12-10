@@ -7,7 +7,14 @@
 #include <type_traits>
 #include <cassert>
 #include <iostream>
-#include <argp.h>
+#include <cmath>
+
+
+#ifdef ZEDBOARD
+    #include "xilsd.h"
+#else
+    #include <argp.h>
+#endif
 
 namespace ML {
 
@@ -15,7 +22,7 @@ namespace ML {
     // Floating Point Compare Epsilon
     constexpr float EPSILON = 0.001;
 
-
+#ifndef ZEDBOARD
     // --- Argument Parsing ---
     // GCC argument input struct
     class arguments {
@@ -56,6 +63,7 @@ namespace ML {
         private:
             struct arguments _args;
     };
+#endif
 
     // Metaprogramming type helpers
     template <typename T> struct remove_all_pointers{
@@ -147,8 +155,8 @@ namespace ML {
     template<typename T_BASE>
     float compareArray(const T_BASE* data1, const T_BASE* data2, const std::size_t* dims, const std::size_t dimsLen, const std::size_t dimIndex = 0) {
         static_assert(!std::is_pointer<T_BASE>(), "Cannot compare pointer type values (arrays)");
-        double curr_diff = 0.0;
-        double max_diff = 0.0;
+        float curr_diff = 0.0;
+        float max_diff = 0.0;
         const T_BASE** dataCast1 = reinterpret_cast<const T_BASE**>(const_cast<T_BASE*>(data1));
         const T_BASE** dataCast2 = reinterpret_cast<const T_BASE**>(const_cast<T_BASE*>(data2));
 
@@ -159,7 +167,7 @@ namespace ML {
                 curr_diff = compareArray<T_BASE>(dataCast1[i], dataCast2[i], dims, dimsLen, dimIndex + 1);
             } else {
                 // Check the values and get their absolute difference
-                curr_diff = abs(data1[i] - data2[i]);
+                curr_diff = (float) fabs(data1[i] - data2[i]);
             }
 
             // Update our max difference if it is larger
@@ -205,7 +213,11 @@ namespace ML {
     // --- File Data Loading ---
     // Recursive array loading function that can load an array of data from multiple dimentions from a binary file
     template<typename T_BASE>
+#ifdef ZEDBOARD
+    void loadArrayData(FIL* file, T_BASE* values, const std::size_t* dims, const std::size_t dimsLen, const std::size_t dimIndex = 0) {
+#else
     void loadArrayData(std::ifstream& file, T_BASE* values, const std::size_t* dims, const std::size_t dimsLen, const std::size_t dimIndex = 0) {
+#endif
         static_assert(!std::is_pointer<T_BASE>(), "Cannot load pointer type values (arrays)");
 
         // Read the values and recurse if needed
@@ -216,14 +228,26 @@ namespace ML {
                 if (dimIndex < dimsLen - 2) {
                     // We do not care about the data pointer returned here since we have that already stored in a array
                     loadArrayData<T_BASE>(file, valuesCast[i], dims, dimsLen, dimIndex + 1);
-                } else if (!file.read(reinterpret_cast<char*>(valuesCast[i]), sizeof(T_BASE) * dims[dimIndex + 1])) { // Read our values
+                } else if (
+                #ifdef ZEDBOARD
+                    !xilsd_fread(reinterpret_cast<char*>(valuesCast[i]), sizeof(T_BASE), dims[dimIndex + 1], file)
+                #else
+                    !file.read(reinterpret_cast<char*>(valuesCast[i]), sizeof(T_BASE) * dims[dimIndex + 1])
+                #endif
+                    ) { // Read our values
                     std::cerr << "Failed to read data values from file" << std::endl;
                     assert(false && "Failed to read file data");
                 }
             }
         // Handle 1D Arrays
         } else {
-            if (!file.read(reinterpret_cast<char*>(values), sizeof(T_BASE) * dims[dimIndex])) { // Read our values
+            if (
+                #ifdef ZEDBOARD
+                    !xilsd_fread(reinterpret_cast<char*>(values), sizeof(T_BASE), dims[dimIndex], file)
+                #else
+                    !file.read(reinterpret_cast<char*>(values), sizeof(T_BASE) * dims[dimIndex])
+                #endif
+                ) { // Read our values
                 std::cerr << "Failed to read data values from file" << std::endl;
                 assert(false && "Failed to read file data");
             }
@@ -238,8 +262,14 @@ namespace ML {
         // assert(std::rank<T>() == dims.size() && "Array type does not have the same rank as the dims provided");
         
         // Open our file and check for issues
+    #ifdef ZEDBOARD
+        FIL* file = nullptr;
+        if (!xilsd_fopen(file, filepath.c_str())) // Create and open our file on the SD card
+    #else
         std::ifstream file(filepath, std::ios::binary); // Create and open our file
-        if (file.is_open()) {
+        if (file.is_open())
+    #endif
+        {
             std::cout << "Opening binary file " << filepath << std::endl;
         } else {
             std::cerr << "Failed to open binary file " << filepath << std::endl;
@@ -251,6 +281,12 @@ namespace ML {
         // Load the data
         typedef typename remove_all_pointers<T>::type T_BASE;
         loadArrayData<T_BASE>(file, reinterpret_cast<T_BASE*>(values), dims.data(), dims.size());
+
+    #ifdef ZEDBOARD
+        // Close our file (ifstream deconstructor does this for us)
+        xilsd_fclose(file);
+    #endif
+
         return values;
     }
 
@@ -285,4 +321,37 @@ namespace ML {
     }
 
 
+    // Deep copy an array by allocating a new one of the same size and recursively copying values
+    // Creates a flat desitnation array in memory
+    template<typename T_BASE>
+    void copyArrayFlat(const T_BASE* array, T_BASE* newArray, const std::size_t* dims, const std::size_t dimsLen, const std::size_t dimIndex = 0, std::size_t& index = 0) {
+        static_assert(!std::is_pointer<T_BASE>(), "Cannot copy pointer type values (arrays)");
+        const T_BASE** arrayCast = reinterpret_cast<const T_BASE**>(const_cast<T_BASE*>(array));
+        T_BASE** newArrayCast = reinterpret_cast<T_BASE**>(newArray);
+
+        // Copy each value
+        for (std::size_t i = 0; i < dims[dimIndex]; i++) {
+            if (dimIndex < (dimsLen - 1)) {
+                copyArrayFlat<T_BASE>(arrayCast[i], newArray, dims, dimsLen, dimIndex + 1, index);
+            } else {
+                newArray[index++] = array[i];
+            }
+        }
+    }
+
+
+    // Create a copy of an array, allocate a new array and recurse all values
+    // Creates a flat desitnation array in memory
+    // Entry point
+    template<typename T>
+    inline void copyArrayFlat(const T array, typename remove_all_pointers<T>::type* newArray, const std::vector<std::size_t>& dims) {
+        static_assert(std::is_pointer<T>(), "Cannot copy non-pointer type values (arrays)");
+        // assert(std::rank<T>() == dims.size() && "Array type does not have the same rank as the dims provided");
+
+        typedef typename remove_all_pointers<T>::type T_BASE;
+        copyArray<T_BASE>(reinterpret_cast<T_BASE*>(array), newArray, dims.data(), dims.size(), 0, 0);
+    }
+
+
 } // namespace ML
+

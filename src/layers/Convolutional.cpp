@@ -66,12 +66,12 @@ namespace ML {
                                     // std::cout << input_x << input_y << c << "\n";
                                     input_x = stride_size * q + s;
                                     input_y = stride_size * p + r;
-                                    convOutputData[p][q][m] += convInputData[input_x][input_y][c] * convWeightData[s][r][c][m];
+                                    convOutputData[q][p][m] += convInputData[input_x][input_y][c] * convWeightData[s][r][c][m];
                                 }
                             }
                         } 
-                        convOutputData[p][q][m] += convBiasData[m];
-                        if(convOutputData[p][q][m] < 0) { convOutputData[p][q][m] = 0; }
+                        convOutputData[q][p][m] += convBiasData[m];
+                        if(convOutputData[q][p][m] < 0) { convOutputData[q][p][m] = 0; }
                     }
                 } 
             }
@@ -158,6 +158,10 @@ namespace ML {
         i32 scale_biases = scale_input * scale_weight;
         // printf("scale_weight: %d\n\rscale_input: %d\n\rscale_biases: %d\n\r", scale_weight, scale_input, scale_biases);
 
+        if(debug || debug_out)  {
+            std::cout << "------------------------layer_" << layer_idx << "------------------------\n";
+        }
+
         for(x = 0; x < getWeightParams().dims[0]; x++) {
             for(y = 0; y < getWeightParams().dims[1]; y++) {
                 for(z = 0; z < getWeightParams().dims[2]; z++) {
@@ -190,8 +194,8 @@ namespace ML {
 
         if(debug) { 
             std::cout << "-----------weights-------------\n";
-            std::cout << "avg err: " << 100 * err/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3])) << "\n"
+            std::cout << "avg err: " << err/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3])) << "\n"
                       << "min err: " << minerr << "\n"
                       << "max err: " << maxerr << "\n\n";
         }
@@ -226,8 +230,8 @@ namespace ML {
 
         if(debug) { 
             std::cout << "-----------inputs-------------\n";
-            std::cout << "avg err: " << 100 * err/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2])) << "\n"
+            std::cout << "avg err: " << err/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2])) << "\n"
                       << "min err: " << minerr << "\n"
                       << "max err: " << maxerr << "\n\n";
         }
@@ -258,8 +262,8 @@ namespace ML {
 
         if(debug) { 
             std::cout << "-----------biases-------------\n";
-            std::cout << "avg err: " << 100 * err/(getBiasParams().dims[0]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getBiasParams().dims[0])) << "\n"
+            std::cout << "avg err: " << err/(getBiasParams().dims[0]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getBiasParams().dims[0])) << "\n"
                       << "min err: " << minerr << "\n"
                       << "max err: " << maxerr << "\n\n";
         }
@@ -284,11 +288,11 @@ namespace ML {
                                 for(c = 0; c < num_input_channels; c++) {
                                     input_x = stide_size * q + s;
                                     input_y = stide_size * p + r;
-                                    convOutputData_q[p][q][m] += convInputData_q[input_x][input_y][c] * convWeightData_q[s][r][c][m];
+                                    convOutputData_q[q][p][m] += convInputData_q[input_x][input_y][c] * convWeightData_q[s][r][c][m];
                                 }
                             }
                         } 
-                        convOutputData_q[p][q][m] += convBiasData_q[m];
+                        convOutputData_q[q][p][m] += convBiasData_q[m];
                     }
                 } 
             }
@@ -308,15 +312,15 @@ namespace ML {
                                     for(c = 0; c < num_input_channels; c++) {
                                         input_x = stide_size * q + s;
                                         input_y = stide_size * p + r;
-                                        convOutputData_2[p][q][m] += convInputData[input_x][input_y][c] * convWeightData[s][r][c][m];
-                                        if(std::isnan(convOutputData_2[p][q][m])) {
+                                        convOutputData_2[q][p][m] += convInputData[input_x][input_y][c] * convWeightData[s][r][c][m];
+                                        if(std::isnan(convOutputData_2[q][p][m])) {
 
                                         }
                                     }
                                 }
                             } 
-                            convOutputData_2[p][q][m] += convBiasData[m];
-                            if(convOutputData_2[p][q][m] < 0) { convOutputData_2[p][q][m] = 0; }
+                            convOutputData_2[q][p][m] += convBiasData[m];
+                            if(convOutputData_2[q][p][m] < 0) { convOutputData_2[q][p][m] = 0; }
                         }
                     } 
                 }
@@ -355,17 +359,18 @@ namespace ML {
 
         if(debug_out) { 
             std::cout << "-----------outputs-------------\n";
-            std::cout << "avg err: " << 100 * err/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2])) << "\n"
+            std::cout << "avg err: " << err/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2])) << "\n"
                       << "min err: " << minerr << "\n"
-                      << "max err: " << maxerr << "\n\n";
+                      << "max err: " << maxerr << "\n"
+                      << "-------------------------------------------------------\n\n";
         }
     }
 
 
-    // Compute the convolution using a tiled approach
+    // Compute the convolution using non-linear (log) scaling
     void ConvolutionalLayer::computeLogQ(const LayerData &dataIn) const {
-        bool debug = false, debug_out = false;
+        bool debug = false, debug_out = true;
 
         //Define Parameters
         int input_height = getInputParams().dims[0];
@@ -411,6 +416,10 @@ namespace ML {
         fp32 err = 0, err_rms = 0;
         fp32 minerr = 0, maxerr = 0;
 
+        if(debug || debug_out)  {
+            std::cout << "------------------------layer_" << layer_idx << "------------------------\n";
+        }
+
         int ceil = 128;
         for(x = 0; x < getWeightParams().dims[0]; x++) {
             for(y = 0; y < getWeightParams().dims[1]; y++) {
@@ -420,10 +429,10 @@ namespace ML {
                         fp32 weight = convWeightData[x][y][z][w];
                         i8 weight_q;
                         if(weight < 0) {
-                            weight_q = std::clamp(-(std::log2(std::fabs(weight))), (float)1.0, (float)ceil-1);
+                            weight_q = static_cast<i8>(std::clamp(-(std::round(std::log2(std::fabs(weight)))), (float)1.0, (float)ceil-1));
                             weight_q = -weight_q;
                         } else if(weight > 0) {
-                            weight_q = std::clamp(-(std::log2(std::fabs(weight))), (float)1.0, (float)ceil);
+                            weight_q = static_cast<i8>(std::clamp(-(std::round(std::log2(std::fabs(weight)))), (float)1.0, (float)ceil));
                         } else {
                             weight_q = 0;
                         }
@@ -458,8 +467,8 @@ namespace ML {
 
         if(debug) { 
             std::cout << "-----------weights-------------\n";
-            std::cout << "avg err: " << 100 * err/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3])) << "\n"
+            std::cout << "avg err: " << err/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3])) << "\n"
                       << "min err: " << minerr << "\n"
                       << "max err: " << maxerr << "\n\n";
         }
@@ -486,10 +495,12 @@ namespace ML {
                         } else {
                             i_dq = 0;
                         }
-
-                        // std::cout << "input_fp32: " << input << "\n"
-                        //           << "input_log2: " << (int)input_q << "\n" 
-                        //           << "input_deqt: " << i_dq << "\n\n";
+                        
+                        // if(layer_idx > 0) {
+                        //     std::cout << "input_fp32: " << input << "\n"
+                        //               << "input_log2: " << (int)input_q << "\n" 
+                        //               << "input_deqt: " << i_dq << "\n\n";
+                        // }
 
                         fp32 cerr = std::fabs(input - i_dq);
                         err += cerr;
@@ -505,8 +516,8 @@ namespace ML {
 
         if(debug) { 
             std::cout << "-----------inputs-------------\n";
-            std::cout << "avg err: " << 100 * err/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2])) << "\n"
+            std::cout << "avg err: " << err/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getInputParams().dims[0] * getInputParams().dims[1] * getInputParams().dims[2])) << "\n"
                       << "min err: " << minerr << "\n"
                       << "max err: " << maxerr << "\n\n";
         }
@@ -517,10 +528,10 @@ namespace ML {
             fp32 bias = convBiasData[x];
             i8 bias_q;
             if(bias < 0) {
-                bias_q = std::clamp(-(std::log2(std::fabs(bias))), (float)1.0, (float)ceil-1);
+                bias_q = static_cast<i8>(std::clamp(-(std::round(std::log2(std::fabs(bias)))), (float)1.0, (float)ceil-1));
                 bias_q = -bias_q;
             } else if(bias > 0) {
-                bias_q = std::clamp(-(std::log2(std::fabs(bias))), (float)1.0, (float)ceil);
+                bias_q = static_cast<i8>(std::clamp(-((std::round(std::log2(std::fabs(bias))))), (float)1.0, (float)ceil));
             } else {
                 bias_q = 0;
             }
@@ -553,8 +564,8 @@ namespace ML {
 
         if(debug) { 
             std::cout << "-----------biases-------------\n";
-            std::cout << "avg err: " << 100 * err/(getBiasParams().dims[0]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getBiasParams().dims[0])) << "\n"
+            std::cout << "avg err: " << err/(getBiasParams().dims[0]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getBiasParams().dims[0])) << "\n"
                       << "min err: " << minerr << "\n"
                       << "max err: " << maxerr << "\n\n";
         }
@@ -581,19 +592,19 @@ namespace ML {
                                 for(c = 0; c < num_input_channels; c++) {
                                     input_x = stide_size * q + s;
                                     input_y = stide_size * p + r;
-                                    // convOutputData_q[p][q][m] += convInputData_q[input_x][input_y][c] * convWeightData_q[s][r][c][m];
+                                    // convOutputData_q[q][p][m] += convInputData_q[input_x][input_y][c] * convWeightData_q[s][r][c][m];
 
                                     // MAC in Log Domain is a bit convoluted (lol)
                                     // pn = inputn + weightn == log2(inputn * weightn)
                                     // sn-1 = previous accumulation
                                     // sn = current accumulation
                                     i8 pn = convInputData_q[input_x][input_y][c] + convWeightData_q[s][r][c][m];
-                                    convOutputData_q[p][q][m] = std::max(prev_acc, pn) + static_cast<i8>((1 << -(std::abs(prev_acc - pn))));
-                                    prev_acc = convOutputData_q[p][q][m];
+                                    convOutputData_q[q][p][m] = std::max(prev_acc, pn) + static_cast<i8>((1 << -(std::abs(prev_acc - pn))));
+                                    prev_acc = convOutputData_q[q][p][m];
                                 }
                             }
                         } 
-                        convOutputData_q[p][q][m] += convBiasData_q[m];
+                        convOutputData_q[q][p][m] += convBiasData_q[m];
                     }
                 } 
             }
@@ -613,15 +624,15 @@ namespace ML {
                                     for(c = 0; c < num_input_channels; c++) {
                                         input_x = stide_size * q + s;
                                         input_y = stide_size * p + r;
-                                        convOutputData_2[p][q][m] += convInputData[input_x][input_y][c] * convWeightData[s][r][c][m];
+                                        convOutputData_2[q][p][m] += convInputData[input_x][input_y][c] * convWeightData[s][r][c][m];
                                         if(std::isnan(convOutputData_2[p][q][m])) {
 
                                         }
                                     }
                                 }
                             } 
-                            convOutputData_2[p][q][m] += convBiasData[m];
-                            if(convOutputData_2[p][q][m] < 0) { convOutputData_2[p][q][m] = 0; }
+                            convOutputData_2[q][p][m] += convBiasData[m];
+                            if(convOutputData_2[q][p][m] < 0) { convOutputData_2[q][p][m] = 0; }
                         }
                     } 
                 }
@@ -660,10 +671,11 @@ namespace ML {
 
         if(debug_out) { 
             std::cout << "-----------outputs-------------\n";
-            std::cout << "avg err: " << 100 * err/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2]) << "\n"
-                      << "rms err: " << 100 * std::sqrt(err_rms/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2])) << "\n"
+            std::cout << "avg err: " << err/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2]) << "\n"
+                      << "rms err: " << std::sqrt(err_rms/(getOutputParams().dims[0] * getOutputParams().dims[1] * getOutputParams().dims[2])) << "\n"
                       << "min err: " << minerr << "\n"
-                      << "max err: " << maxerr << "\n\n";
+                      << "max err: " << maxerr << "\n"
+                      << "-------------------------------------------------------\n\n";
         }
     }
 

@@ -80,14 +80,17 @@ namespace ML {
                     ((ConvolutionalLayer*) layers[i])->freeLayer<T>();
                     break;
                 case Layer::LayerType::DENSE:
-                //     ((DenseLayer*) layers[i])->freeLayer<T>();
-                //     break;
+                    ((DenseLayer*) layers[i])->freeLayer<T>();
+                    break;
                 case Layer::LayerType::SOFTMAX:
-                //     ((SoftmaxLayer*) layers[i])->freeLayer<T>();
-                //     break;
+                    ((SoftMaxLayer*) layers[i])->freeLayer<T>();
+                    break;
                 case Layer::LayerType::MAX_POOLING:
-                //     ((MaxPoolingLayer*) layers[i])->freeLayer<T>();
-                //     break;
+                    ((MaxPoolingLayer*) layers[i])->freeLayer<T>();
+                    break;
+                case Layer::LayerType::FLATTEN:
+                    ((FlattenLayer*) layers[i])->freeLayer<T>();
+                    break;
                 case Layer::LayerType::NONE:
                     [[fallthrough]];
                 default:

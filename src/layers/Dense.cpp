@@ -42,12 +42,13 @@ namespace ML {
         auto start = high_resolution_clock::now();
         //loop through and perform the opperation
         for(n = 0; n < batch_size; n++){
-            for(h = 0; h < input_height; h++){
-                for(m = 0; m < num_input_channels; m++) {                                    
-                    denseOutputData[m] += denseInputData[h] * denseWeightData[h][m];  
-                    denseOutputData[m] += denseBiasData[m];    
-                    if(denseOutputData[m] < 0) { denseOutputData[m] = 0.0; }                          
+            for(m = 0; m < num_input_channels; m++){
+                for(h = 0; h < input_height; h++) {                                    
+                    denseOutputData[m] += denseInputData[h] * denseWeightData[h][m];                           
                 }
+                
+                denseOutputData[m] += denseBiasData[m];    
+                if(denseOutputData[m] < 0) { denseOutputData[m] = 0.0; } 
             } 
         }
 

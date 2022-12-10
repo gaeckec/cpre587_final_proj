@@ -12,14 +12,8 @@
 #include "layers/Softmax.h"
 #include "layers/Flatten.h"
 
-#define need_4_speed 1
+#define need_4_speed 0
 
-#ifdef ZEDBOARD
-    #include "ML.h"
-    namespace ML {
-#else
-    using namespace ML;
-#endif
 
 // Make our code a bit cleaner
 namespace fs = std::filesystem;
@@ -57,7 +51,7 @@ Model buildToyModel(const fs::path modelPath) {
     LayerParams conv2_weightParam(sizeof(fp32), {5, 5, 32, 32}, modelPath / "conv2_weights.bin");
     LayerParams conv2_biasParam(sizeof(fp32), {32}, modelPath / "conv2_biases.bin");
 
-    ConvolutionalLayer* conv2 = new ConvolutionalLayer(conv2_inDataParam, conv2_outDataParam, conv2_weightParam, conv2_biasParam, 4);
+    ConvolutionalLayer* conv2 = new ConvolutionalLayer(conv2_inDataParam, conv2_outDataParam, conv2_weightParam, conv2_biasParam, 8);
     model.addLayer(conv2);
 
     // --- MPL 0: L2 ---
@@ -88,7 +82,7 @@ Model buildToyModel(const fs::path modelPath) {
     LayerParams conv4_weightParam(sizeof(fp32), {3, 3, 64, 64}, modelPath / "conv4_weights.bin");
     LayerParams conv4_biasParam(sizeof(fp32), {64}, modelPath / "conv4_biases.bin");
 
-    ConvolutionalLayer* conv4 = new ConvolutionalLayer(conv4_inDataParam, conv4_outDataParam, conv4_weightParam, conv4_biasParam, 4);
+    ConvolutionalLayer* conv4 = new ConvolutionalLayer(conv4_inDataParam, conv4_outDataParam, conv4_weightParam, conv4_biasParam, 8);
     model.addLayer(conv4);
 
     // --- MPL 1: L5---
@@ -139,7 +133,7 @@ Model buildToyModel(const fs::path modelPath) {
 
     FlattenLayer* flat0 = new FlattenLayer(flat0_inDataParam, flat0_outDataParam);
     model.addLayer(flat0);
-
+/*
     // --- Dense 0: L10 ---
     // Input shape: 2048
     // Output shape: 256
@@ -170,7 +164,7 @@ Model buildToyModel(const fs::path modelPath) {
 
     SoftMaxLayer* sm0 = new SoftMaxLayer(sm0_inDataParam, sm0_outDataParam);
     model.addLayer(sm0);
-
+*/
     return model;
 }
 
@@ -249,7 +243,7 @@ int main(int argc, char **argv) {
     float max_latency = 0;
     float total_f = 0;
     // srand (time(NULL));
-    srand (10262022);
+    srand (12102022);
     for (times_index = 0; times_index < loops; times_index++){
         // Construct a LayerData object from a LayerParams one
         value = rand() % 30000;
@@ -261,7 +255,7 @@ int main(int argc, char **argv) {
         layer_idx = 0;
         // layer_times = {0};
         // Run infrence on the model
-        const LayerData output = model.infrence(img, Layer::InfType::LOGQ);
+        const LayerData output = model.infrence(img, Layer::InfType::NAIVE);
 
         //Finishing timing of system
         // auto end = std::chrono::high_resolution_clock::now();
@@ -289,31 +283,32 @@ int main(int argc, char **argv) {
 
 #else
     // Construct a LayerData object from a LayerParams one
-    LayerData img( {sizeof(fp32), dims, basePath / "img_val_dataset/test_input_100.bin"} );
+    LayerData img( {sizeof(fp32), dims, basePath / "image_0.bin"} );
     img.loadData<Array3D_fp32>();
 
     // auto start = std::chrono::high_resolution_clock::now();
 
     // Run infrence on the model
-    const LayerData output = model.infrence(img, Layer::InfType::NAIVE);
+    const LayerData output = model.infrence(img, Layer::InfType::LINQ);
 
     //Finishing timing of system
-    // auto end = std::chrono::high_resolution_clock::now();
-    // auto total = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "\n\ntotal time output =  " 
-    //           << total.count() 
-    //           << " us \n";
+    float latency = 0;
+    for(int l = 0; l < 12; l++) {
+        latency += layer_times[l];
+    }
+
+    std::cout << "Inference Latency: " << latency << " us\n";
 
     // Compare the output
-    // std::cout << "\n--- Comparing The Output ---" << std::endl;
+    std::cout << "\n--- Comparing The Output ---" << std::endl;
 
-    // // Construct a LayerData object from a LayerParams one
-    // LayerData expected( { sizeof(fp32), {56,56,32}, basePath / "image_0_data" / "layer_1_output.bin" } );
-    // expected.loadData<Array3D_fp32>();
-    // std::cout << "Comparing expected output to model output (max error / T/F within epsilon " << EPSILON << "): \n\t"
-    //           << expected.compare<Array3D<fp32>>(output) << " / "
-    //           << std::boolalpha << bool(expected.compareWithin<Array3D<fp32>>(output, EPSILON))
-    //           << std::endl;
+    // Construct a LayerData object from a LayerParams one
+    LayerData expected( { sizeof(fp32), {2048}, basePath / "image_0_data" / "layer_9_output.bin" } );
+    expected.loadData<Array3D_fp32>();
+    std::cout << "Comparing expected output to model output (max error / T/F within epsilon " << EPSILON << "): \n\t"
+              << expected.compare<Array3D<fp32>>(output) << " / "
+              << std::boolalpha << bool(expected.compareWithin<Array3D<fp32>>(output, EPSILON))
+              << std::endl;
 
 #endif
 
