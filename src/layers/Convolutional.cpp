@@ -315,7 +315,7 @@ namespace ML {
                 for(y = 0; y < getWeightParams().dims[1]; y++) {
                     for(z = 0; z < getWeightParams().dims[2]; z++) {
                         for(w = 0; w < getWeightParams().dims[3]; w++) {
-                            weights_max = std::max(weights_max, std::abs(convWeightData[x][y][z][w]));
+                            weights_max = std::max(weights_max, std::fabs(convWeightData[x][y][z][w]));
                         }
                     }
                 }
@@ -323,7 +323,7 @@ namespace ML {
             for(x = 0; x < getInputParams().dims[0]; x++) {
                 for(y = 0; y < getInputParams().dims[1]; y++) {
                     for(z = 0; z < getInputParams().dims[2]; z++) {
-                        inputs_max = std::max(inputs_max, std::abs(convInputData[x][y][z]));
+                        inputs_max = std::max(inputs_max, std::fabs(convInputData[x][y][z]));
                     }
                 }
             }
@@ -338,7 +338,8 @@ namespace ML {
         // printf("scale_weight: %d\n\rscale_input: %d\n\rscale_biases: %d\n\r", scale_weight, scale_input, scale_biases);
 
         if(isQuantized()) {
-
+            fp32 err = 0;
+            fp32 minerr = 0, maxerr = 0;
             //Quantize inputs, weights, and biases with scales
             //printf("Starting Quantization...\n\r");
             for(x = 0; x < getWeightParams().dims[0]; x++) {
@@ -347,10 +348,19 @@ namespace ML {
                         for(w = 0; w < getWeightParams().dims[3]; w++) {
                             convWeightData_q[x][y][z][w] = static_cast<i8>(std::round(convWeightData[x][y][z][w] * scale_weight));
                             //printf("convWeightData_q: %d\n\r", convWeightData_q[x][y][z][w]);
+                            fp32 w_dq = convWeightData_q[x][y][z][w] / scale_weight;
+                            fp32 cerr = std::pow(convWeightData[x][y][z][w] - w_dq, 2);
+                            err += cerr;
+                            minerr = std::min(minerr, cerr);
+                            maxerr = std::max(maxerr, cerr);
                         }
                     }
                 }
             }
+
+            std::cout << "rme err: " << err/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3]) << "\n"
+                      << "min err: " << minerr << "\n"
+                      << "max err: " << maxerr << "\n";
 
             for(x = 0; x < getInputParams().dims[0]; x++) {
                 for(y = 0; y < getInputParams().dims[1]; y++) {
@@ -528,45 +538,101 @@ namespace ML {
         //Debugging Var - var[x][y][z]
         int input_x, input_y;
 
+        if(debug){
+            fp32 weights_max = convWeightData[0][0][0][0];
+            fp32 inputs_max = convInputData[0][0][0];
+            for(x = 0; x < getWeightParams().dims[0]; x++) {
+                for(y = 0; y < getWeightParams().dims[1]; y++) {
+                    for(z = 0; z < getWeightParams().dims[2]; z++) {
+                        for(w = 0; w < getWeightParams().dims[3]; w++) {
+                            weights_max = std::max(weights_max, std::fabs(convWeightData[x][y][z][w]));
+                        }
+                    }
+                }
+            }
+            for(x = 0; x < getInputParams().dims[0]; x++) {
+                for(y = 0; y < getInputParams().dims[1]; y++) {
+                    for(z = 0; z < getInputParams().dims[2]; z++) {
+                        inputs_max = std::max(inputs_max, std::fabs(convInputData[x][y][z]));
+                    }
+                }
+            }
+
+            printf("Weight Max Val: %lf\n\rInput Max Val: %lf\n\r", weights_max, inputs_max);
+        }
+
         if(isQuantized()) {
             //Quantize weights, inputs, and biases
+            fp32 err = 0;
+            fp32 minerr = 0, maxerr = 0;
+            i8 max_q = 0;
+
+            int ceil = 128;
 
             for(x = 0; x < getWeightParams().dims[0]; x++) {
                 for(y = 0; y < getWeightParams().dims[1]; y++) {
                     for(z = 0; z < getWeightParams().dims[2]; z++) {
                         for(w = 0; w < getWeightParams().dims[3]; w++) {
-                            convWeightData_q[x][y][z][w] = static_cast<i8>(log2(convWeightData[x][y][z][w]));
+                            //i8 w_q = std::log2(convWeightData[x][y][z][w]);
+                            fp32 weight = convWeightData[x][y][z][w];
+                            i8 weight_q;
+                            if(weight < 0) {
+                                weight_q = std::clamp(-(std::log2(std::fabs(weight)/weights_max)), (float)1.0, (float)ceil-1);
+                                weight_q = -weight_q;
+                            } else if(weight > 0) {
+                                weight_q = std::clamp(-(std::log2(std::fabs(weight)/weights_max)), (float)1.0, (float)ceil);
+                            } else {
+                                weight_q = 0;
+                            }
+
+                            fp32 w_dq;
+                            if(!std::signbit(weight_q)) {
+                                w_dq = static_cast<fp32>(std::pow(2, -(std::abs(weight_q))));
+                            } else {
+                                w_dq = static_cast<fp32>(-(std::pow(2, -(std::abs(weight_q)))));
+                            }
+
                             std::cout << "weight_fp32: " << convWeightData[x][y][z][w] << "\n"
-                                      << "weight_log2: " << convWeightData_q[x][y][z][q] << "\n\n";
+                                      << "weight_log2: " << (int)weight_q << "\n" 
+                                      << "weight_deqt: " << w_dq << "\n\n";
+                            // fp32 cerr = std::pow(convWeightData[x][y][z][w] - w_dq, 2);
+                            // err += cerr;
+                            // minerr = std::min(minerr, cerr);
+                            // maxerr = std::max(maxerr, cerr);
+                            // max_q = std::max(max_q, w_q);
                         }
                     }
                 }
             }
 
+            std::cout << "rme err: " << err/(getWeightParams().dims[0] * getWeightParams().dims[1] * getWeightParams().dims[2] * getWeightParams().dims[3]) << "\n"
+                      << "min err: " << minerr << "\n"
+                      << "max err: " << maxerr << "\n";
+
             //Start time for profiling
             auto start = high_resolution_clock::now();
 
-            for(n = 0; n < batch_size; n++){
-                for(m = 0; m < num_filter_channels; m++){
-                    for(p = 0; p < output_height; p++){
-                        for(q = 0; q < output_width; q++){
-                            for(c = 0; c < num_input_channels; c++){
-                                for(r = 0; r < filter_height; r++){
-                                    for(s = 0; s < filter_width; s++){
+            // for(n = 0; n < batch_size; n++){
+            //     for(m = 0; m < num_filter_channels; m++){
+            //         for(p = 0; p < output_height; p++){
+            //             for(q = 0; q < output_width; q++){
+            //                 for(c = 0; c < num_input_channels; c++){
+            //                     for(r = 0; r < filter_height; r++){
+            //                         for(s = 0; s < filter_width; s++){
                                         
-                                        input_x = stide_size * q + s;
-                                        input_y = stide_size * p + r;
+            //                             input_x = stide_size * q + s;
+            //                             input_y = stide_size * p + r;
 
-                                        convOutputData_q[p][q][m] += convInputData_q[input_x][input_y][c] * convWeightData_q[s][r][c][m];
-                                        // printf("convOutputData_q: %d\n\r", convOutputData_q[q][p][m]);
-                                    }
-                                }
-                            } 
-                            convOutputData_q[p][q][m] += convBiasData_q[m];
-                        }
-                    } 
-                }
-            }
+            //                             convOutputData_q[p][q][m] += convInputData_q[input_x][input_y][c] * convWeightData_q[s][r][c][m];
+            //                             // printf("convOutputData_q: %d\n\r", convOutputData_q[q][p][m]);
+            //                         }
+            //                     }
+            //                 } 
+            //                 convOutputData_q[p][q][m] += convBiasData_q[m];
+            //             }
+            //         } 
+            //     }
+            // }
 
             auto end = high_resolution_clock::now();
             auto total = duration_cast<microseconds>(end - start);
