@@ -86,7 +86,7 @@ namespace ML {
 
     // Compute the convolution using threads
     void ConvolutionalLayer::computeLinearQ(const LayerData &dataIn) const {
-        bool debug = false, debug_out = false;
+        bool debug = false, debug_out = true;
         int quant_length = getQuantLength();
 
         //Define Parameters
@@ -344,6 +344,10 @@ namespace ML {
 
                     convOutputData[x][y][z] = o_dq;
 
+                    std::cout << "output_fp32: " << output << "\n"
+                              << "output_log2: " << (int)output_q << "\n" 
+                              << "output_deqt: " << o_dq << "\n\n";
+
                     if(debug_out) {
                         fp32 cerr = std::fabs(output - o_dq);
                         err += cerr;
@@ -405,9 +409,9 @@ namespace ML {
         fp32 convOutputData_2[output_height][output_width][num_filter_channels];
             
         Array4D_i8 convWeightData_q = getWeightData_q().getData<Array4D_i8>();
-        Array1D_i32 convBiasData_q = getBiasData_q().getData<Array1D_i32>();
+        Array1D_i8 convBiasData_q = getBiasData_q().getData<Array1D_i8>();
         Array3D_ui8 convInputData_q = getInputData_q().getData<Array3D_ui8>();
-        Array3D_i32 convOutputData_q = getOutputData_q().getData<Array3D_i32>();
+        Array3D_i8 convOutputData_q = getOutputData_q().getData<Array3D_i8>();
 
         //Debugging Var - var[x][y][z]
         int input_x, input_y;
@@ -574,6 +578,7 @@ namespace ML {
             for(y = 0; y < getOutputParams().dims[1]; y++) {
                 for(z = 0; z < getOutputParams().dims[2]; z++) { 
                     convOutputData_2[x][y][z] = 0;
+                    convOutputData_q[x][y][z] = 0;
                 }
             }
         }
@@ -599,12 +604,17 @@ namespace ML {
                                     // sn-1 = previous accumulation
                                     // sn = current accumulation
                                     i8 pn = convInputData_q[input_x][input_y][c] + convWeightData_q[s][r][c][m];
-                                    convOutputData_q[q][p][m] = std::max(prev_acc, pn) + static_cast<i8>((1 << -(std::abs(prev_acc - pn))));
+                                    convOutputData_q[q][p][m] = std::max(prev_acc, pn) + (1 << -(static_cast<i8>((std::abs(prev_acc - pn)))));
                                     prev_acc = convOutputData_q[q][p][m];
+
+                                    // std::cout << (int)convOutputData[q][p][m] << "\n";
                                 }
                             }
                         } 
-                        convOutputData_q[q][p][m] += convBiasData_q[m];
+                        // Accumulate bias 
+                        i8 bias = convBiasData_q[m];
+                        convOutputData_q[q][p][m] = std::max(prev_acc, bias) + (1 << -(static_cast<i8>((std::abs(prev_acc - bias)))));
+                        prev_acc = 0;
                     }
                 } 
             }
@@ -655,6 +665,10 @@ namespace ML {
                     }
 
                     convOutputData[x][y][z] = o_dq;
+
+                    std::cout << "output_fp32: " << output << "\n"
+                              << "output_log2: " << (int)output_q << "\n" 
+                              << "output_deqt: " << o_dq << "\n\n";
 
                     if(debug_out) {
                         fp32 cerr = std::fabs(output - o_dq);

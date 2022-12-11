@@ -62,7 +62,7 @@ Model buildToyModel(const fs::path modelPath) {
     
     MaxPoolingLayer* mpl0 = new MaxPoolingLayer(mpl0_inDataParam, mpl0_outDataParam);
     model.addLayer(mpl0);
-
+/*
     // --- Conv 3: L3 ---
     // Input shape: 28x28x32
     // Output shape: 26x26x64
@@ -133,7 +133,7 @@ Model buildToyModel(const fs::path modelPath) {
 
     FlattenLayer* flat0 = new FlattenLayer(flat0_inDataParam, flat0_outDataParam);
     model.addLayer(flat0);
-/*
+
     // --- Dense 0: L10 ---
     // Input shape: 2048
     // Output shape: 256
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
     // auto start = std::chrono::high_resolution_clock::now();
 
     // Run infrence on the model
-    const LayerData output = model.infrence(img, Layer::InfType::LINQ);
+    const LayerData output = model.infrence(img, Layer::InfType::LOGQ);
 
     //Finishing timing of system
     float latency = 0;
@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
     std::cout << "\n--- Comparing The Output ---" << std::endl;
 
     // Construct a LayerData object from a LayerParams one
-    LayerData expected( { sizeof(fp32), {2048}, basePath / "image_0_data" / "layer_9_output.bin" } );
+    LayerData expected( { sizeof(fp32), {28, 28, 32}, basePath / "image_0_data" / "layer_2_output.bin" } );
     expected.loadData<Array3D_fp32>();
     std::cout << "Comparing expected output to model output (max error / T/F within epsilon " << EPSILON << "): \n\t"
               << expected.compare<Array3D<fp32>>(output) << " / "
